@@ -1,0 +1,6 @@
+{
+  "name": "Diverse Products Store",
+  "description": "An elegant, secure, and user-friendly bilingual e-commerce store featuring various products, interactive shopping cart, secure checkout simulator, and detailed order verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
