@@ -1,0 +1,163 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  slug      String     @unique
+  nameAr    String
+  nameEn    String
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Product {
+  id                String      @id @default(uuid())
+  categoryId        String
+  category          Category    @relation(fields: [categoryId], references: [id])
+  price             Float
+  originalPrice     Float?
+  rating            Float       @default(5.0)
+  reviewsCount      Int         @default(0)
+  image             String
+  stock             Int         @default(10)
+  lowStockThreshold Int         @default(5)
+  sku               String?
+  barcode           String?
+  status            String      @default("Active") // 'Active' | 'Hidden' | 'OutOfStock'
+  isFeatured        Boolean     @default(false)
+  isDeleted         Boolean     @default(false)
+  deletedAt         DateTime?
+  nameAr            String
+  descAr            String
+  featuresAr        String      // JSON string array
+  specsAr           String      // JSON string object
+  nameEn            String
+  descEn            String
+  featuresEn        String      // JSON string array
+  specsEn           String      // JSON string object
+
+  orderItems        OrderItem[]
+  stockLogs         StockLog[]
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  name                 String
+  password             String    @default("password123")
+  role                 String    @default("user") // 'user' | 'admin'
+  refreshToken         String?
+  emailVerified        Boolean   @default(false)
+  verificationToken    String?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  phone                String?
+  address              String?
+  city                 String?
+  zipCode              String?
+  orders               Order[]
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Order {
+  id            String      @id // e.g. ORD-123456
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  fullName      String
+  email         String
+  phone         String
+  address       String
+  city          String
+  zipCode       String
+  paymentMethod String
+  subtotal      Float
+  shippingCost  Float
+  discount      Float
+  total         Float
+  status        String      @default("placed") // 'placed' | 'verified' | 'packing' | 'shipping' | 'delivered'
+  secureToken   String
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  nameAr    String
+  nameEn    String
+  price     Float
+  quantity  Int
+}
+
+model StockLog {
+  id             String   @id @default(uuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantityBefore Int
+  quantityAfter  Int
+  delta          Int
+  type           String   // 'increase' | 'decrease' | 'set' | 'sale' | 'return' | 'audit'
+  reason         String?  // reason description
+  operatorName   String   // Name of operator or system
+  createdAt      DateTime @default(now())
+}
+
+model Coupon {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  discountPercent Float
+  maxDiscount     Float
+  minSubtotal     Float?
+  isActive        Boolean   @default(true)
+  expiryDate      DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model StoreSettings {
+  id                  String   @id @default("singleton")
+  storeNameAr         String   @default("متجر نجد الإلكتروني")
+  storeNameEn         String   @default("Najd Online Store")
+  supportEmail        String   @default("support@salla-store.sa")
+  supportPhone        String   @default("+966 50 123 4567")
+  currency            String   @default("SAR")
+  defaultShippingCost Float    @default(15)
+  taxRate             Float    @default(15)
+  isMaintenanceMode   Boolean  @default(false)
+
+  updatedAt           DateTime @updatedAt
+}
+
+model OrderStatusHistory {
+  id           String   @id @default(uuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus   String
+  toStatus     String
+  operatorName String   // Name of employee or system
+  notes        String?  // Optional notes
+  createdAt    DateTime @default(now())
+}
